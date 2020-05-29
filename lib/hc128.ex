@@ -22,6 +22,7 @@ defmodule HC128 do
   def alloc_context(), do: alloc_context_nif(self(), System.system_time(:millisecond))
   def print_context(context), do: print_context_nif(context)
   def count_context(), do: count_context_nif()
+  def decode_stream(_context, ""), do: {:ok, ""}
   def decode_stream(context, input), do: decode_stream_nif(context, input)
   def set_key_iv(context, key, iv) when byte_size(key) == 16 and byte_size(iv) == 16 do
     set_key_iv_nif(context, key, iv)

@@ -25,6 +25,7 @@
 #ifdef HAVE_HC128
 
 #include "hc128.h"
+#include <stdio.h>
 
 /* BEGIN copy from misc.c */
 
@@ -298,6 +299,7 @@ static void Hc128_SetIV(HC128* ctx, const byte* inIv)
 
     /* initialize counter1024, X and Y */
 	ctx->counter1024 = 0;
+	ctx->keystream_it = 64;
 	for (i = 0; i < 16; i++) ctx->X[i] = ctx->T[512-16+i];
     for (i = 0; i < 16; i++) ctx->Y[i] = ctx->T[512+512-16+i];
 
@@ -372,49 +374,48 @@ int wc_Hc128_SetKey(HC128* ctx, const byte* key, const byte* iv)
 static WC_INLINE int DoProcess(HC128* ctx, byte* output, const byte* input,
                             word32 msglen)
 {
-  word32 i, keystream[16];
-
-  for ( ; msglen >= 64; msglen -= 64, input += 64, output += 64)
-  {
-	  generate_keystream(ctx, keystream);
-
-      /* unroll loop */
-	  ((word32*)output)[0]  = ((word32*)input)[0]  ^ LITTLE32(keystream[0]);
-	  ((word32*)output)[1]  = ((word32*)input)[1]  ^ LITTLE32(keystream[1]);
-	  ((word32*)output)[2]  = ((word32*)input)[2]  ^ LITTLE32(keystream[2]);
-	  ((word32*)output)[3]  = ((word32*)input)[3]  ^ LITTLE32(keystream[3]);
-	  ((word32*)output)[4]  = ((word32*)input)[4]  ^ LITTLE32(keystream[4]);
-	  ((word32*)output)[5]  = ((word32*)input)[5]  ^ LITTLE32(keystream[5]);
-	  ((word32*)output)[6]  = ((word32*)input)[6]  ^ LITTLE32(keystream[6]);
-	  ((word32*)output)[7]  = ((word32*)input)[7]  ^ LITTLE32(keystream[7]);
-	  ((word32*)output)[8]  = ((word32*)input)[8]  ^ LITTLE32(keystream[8]);
-	  ((word32*)output)[9]  = ((word32*)input)[9]  ^ LITTLE32(keystream[9]);
-	  ((word32*)output)[10] = ((word32*)input)[10] ^ LITTLE32(keystream[10]);
-	  ((word32*)output)[11] = ((word32*)input)[11] ^ LITTLE32(keystream[11]);
-	  ((word32*)output)[12] = ((word32*)input)[12] ^ LITTLE32(keystream[12]);
-	  ((word32*)output)[13] = ((word32*)input)[13] ^ LITTLE32(keystream[13]);
-	  ((word32*)output)[14] = ((word32*)input)[14] ^ LITTLE32(keystream[14]);
-	  ((word32*)output)[15] = ((word32*)input)[15] ^ LITTLE32(keystream[15]);
+  word32* keystream = ctx->keystream;
+  while (msglen > 0) {
+    if(ctx->keystream_it >= 64) {
+        generate_keystream(ctx, keystream);
+        ctx->keystream_it = 0;
+    }
+    if(ctx->keystream_it == 0 && msglen >= 64) {
+        ((word32*)output)[0]  = ((word32*)input)[0]  ^ LITTLE32(keystream[0]);
+        ((word32*)output)[1]  = ((word32*)input)[1]  ^ LITTLE32(keystream[1]);
+        ((word32*)output)[2]  = ((word32*)input)[2]  ^ LITTLE32(keystream[2]);
+        ((word32*)output)[3]  = ((word32*)input)[3]  ^ LITTLE32(keystream[3]);
+        ((word32*)output)[4]  = ((word32*)input)[4]  ^ LITTLE32(keystream[4]);
+        ((word32*)output)[5]  = ((word32*)input)[5]  ^ LITTLE32(keystream[5]);
+        ((word32*)output)[6]  = ((word32*)input)[6]  ^ LITTLE32(keystream[6]);
+        ((word32*)output)[7]  = ((word32*)input)[7]  ^ LITTLE32(keystream[7]);
+        ((word32*)output)[8]  = ((word32*)input)[8]  ^ LITTLE32(keystream[8]);
+        ((word32*)output)[9]  = ((word32*)input)[9]  ^ LITTLE32(keystream[9]);
+        ((word32*)output)[10] = ((word32*)input)[10] ^ LITTLE32(keystream[10]);
+        ((word32*)output)[11] = ((word32*)input)[11] ^ LITTLE32(keystream[11]);
+        ((word32*)output)[12] = ((word32*)input)[12] ^ LITTLE32(keystream[12]);
+        ((word32*)output)[13] = ((word32*)input)[13] ^ LITTLE32(keystream[13]);
+        ((word32*)output)[14] = ((word32*)input)[14] ^ LITTLE32(keystream[14]);
+        ((word32*)output)[15] = ((word32*)input)[15] ^ LITTLE32(keystream[15]);
+        input += 64;
+        output += 64;
+        msglen -= 64;
+        ctx->keystream_it += 64;
+    } else if(ctx->keystream_it <= 60 && msglen >= 4) {
+        byte* keystream_ptr = ((byte*)keystream) + ctx->keystream_it;
+        ((word32*)output)[0]  = ((word32*)input)[0] ^ LITTLE32(*(word32*)keystream_ptr);
+        output += 4;
+        input += 4;
+        msglen -= 4;
+        ctx->keystream_it += 4;
+    } else {
+        output[0] = input[0] ^ ((byte*)keystream)[ctx->keystream_it];
+        output += 1;
+        input += 1;
+        msglen -= 1;
+        ctx->keystream_it += 1;
+    }
   }
-
-  if (msglen > 0)
-  {
-      XMEMSET(keystream, 0, sizeof(keystream)); /* hush the static analysis */
-      generate_keystream(ctx, keystream);
-
-#ifdef BIG_ENDIAN_ORDER
-      {
-          word32 wordsLeft = msglen / sizeof(word32);
-          if (msglen % sizeof(word32)) wordsLeft++;
-
-          ByteReverseWords(keystream, keystream, wordsLeft * sizeof(word32));
-      }
-#endif
-
-      for (i = 0; i < msglen; i++)
-	      output[i] = input[i] ^ ((byte*)keystream)[i];
-  }
-
   return 0;
 }
 

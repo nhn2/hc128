@@ -43,6 +43,8 @@ typedef struct HC128 {
     word32 counter1024;         /* counter1024 = i mod 1024 at the ith step */
     word32 key[8];
     word32 iv[8];
+    word32 keystream[16];
+    word32 keystream_it;
 #ifdef XSTREAM_ALIGN
     void*  heap;  /* heap hint, currently XMALLOC only used with aligning */
 #endif
