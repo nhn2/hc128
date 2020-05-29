@@ -5,8 +5,8 @@
 #include <string.h>
 
 #define HAVE_HC128 1
+//#define BIG_ENDIAN_ORDER
 
-typedef unsigned short word16;
 typedef unsigned int   word32;
 typedef unsigned char  byte;
 #define WOLFSSL_API

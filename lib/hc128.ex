@@ -30,19 +30,19 @@ defmodule HC128 do
     {:error, :invalid_key_iv}
   end
   ## NIF API
-  defp alloc_context_nif(pid, created_at)
-  defp alloc_context_nif(_pid, _created_at), do: :erlang.nif_error(:not_loaded)
+  def alloc_context_nif(pid, created_at)
+  def alloc_context_nif(_pid, _created_at), do: :erlang.nif_error(:not_loaded)
 
-  defp print_context_nif(context)
-  defp print_context_nif(_context), do: :erlang.nif_error(:not_loaded)
+  def print_context_nif(context)
+  def print_context_nif(_context), do: :erlang.nif_error(:not_loaded)
 
-  defp count_context_nif()
-  defp count_context_nif(), do: :erlang.nif_error(:not_loaded)
+  def count_context_nif()
+  def count_context_nif(), do: :erlang.nif_error(:not_loaded)
 
-  defp set_key_iv_nif(context, key, iv)
-  defp set_key_iv_nif(_context, _key, _iv), do: :erlang.nif_error(:not_loaded)
+  def set_key_iv_nif(context, key, iv)
+  def set_key_iv_nif(_context, _key, _iv), do: :erlang.nif_error(:not_loaded)
 
-  defp decode_stream_nif(context, input)
-  defp decode_stream_nif(_context, _input), do: :erlang.nif_error(:not_loaded)
+  def decode_stream_nif(context, input)
+  def decode_stream_nif(_context, _input), do: :erlang.nif_error(:not_loaded)
 
 end

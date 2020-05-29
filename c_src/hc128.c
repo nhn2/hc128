@@ -62,6 +62,16 @@ return rotlFixed(value, 16U);
 #endif
 }
 
+WC_STATIC WC_INLINE void ByteReverseWords(word32* out, const word32* in,
+                                          word32 byteCount)
+{
+    word32 count = byteCount/(word32)sizeof(word32), i;
+    for (i = 0; i < count; i++)
+        out[i] = ByteReverseWord32(in[i]);
+
+}
+
+
 /* END copy from misc.c */
 
 #ifdef BIG_ENDIAN_ORDER
